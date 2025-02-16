@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <title>Derfi - Tigrigna Music 24/7</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- Load FontAwesome from CDN -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
   <style>
-    /* The body serves as our gradient container with a 30s transition */
+    /* Mobile-friendly full-page setup with smooth background transition */
     html, body {
       margin: 0;
       padding: 0;
@@ -15,12 +16,13 @@
       transition: background 30s ease;
       font-family: Arial, sans-serif;
     }
-    /* Center the player container */
+    /* Centered player container */
     #playerContainer {
       background: rgba(0, 0, 0, 0.8);
       padding: 10px;
       border-radius: 10px;
-      width: 320px;
+      width: 90%;
+      max-width: 340px;
       margin: auto;
       text-align: center;
       position: relative;
@@ -31,30 +33,32 @@
     #artWrapper {
       width: 300px;
       margin: 0 auto;
-      margin-top: 10px;
     }
-    /* Album art styling: 300px square */
+    /* Album art fixed at 300px square */
     #albumArt {
+      margin-top: 12px;
+      
       width: 300px;
       height: 300px;
       object-fit: cover;
       border-radius: 10px;
       display: block;
     }
-    /* Info container for text and controls */
+    /* Info container for text and play/pause controls */
     #infoContainer {
       margin-top: 10px;
       display: flex;
+      margin-bottom: 12px;
       align-items: center;
       justify-content: center;
       width: 300px;
     }
-    /* Text block with vertical stack of title and artist */
+    /* Text block with vertical stacking of title (top) and artist (bottom) in white */
     #textInfo {
-      text-align: left;
-      color: #fff;
       margin-top: 10px;
       margin-bottom: 10px;
+      text-align: left;
+      color: #fff;
       flex: 1;
     }
     #songTitle {
@@ -66,7 +70,7 @@
     }
     #songArtist {
       font-size: 16px;
-      margin: 4px 0 0;
+      margin-top: 4px;
       color: #fff;
     }
     /* Custom play/pause button using FontAwesome icons */
@@ -74,7 +78,7 @@
       background: none;
       border: none;
       color: #fff;
-      font-size: 38px;
+      font-size: 48px;  /* Increase size as needed */
       cursor: pointer;
       margin-left: 10px;
       flex-shrink: 0;
@@ -85,29 +89,51 @@
     }
   </style>
 </head>
-<!-- Give the body an id for gradient transitions -->
 <body id="gradient-button-transition">
   <div id="playerContainer">
     <div id="artWrapper">
-      <!-- Album art (placeholder if none available) -->
+      <!-- Album art (using dummyimage as placeholder) -->
       <img id="albumArt" src="https://dummyimage.com/300x300/444/fff&text=No+Art" alt="Album Art">
       <!-- Info container: vertical text info and play/pause button -->
       <div id="infoContainer">
         <div id="textInfo">
-          <div id="songTitle">Loading...</div>
-          <div id="songArtist">Loading...</div>
+          <div id="songTitle">Loading Title...</div>
+          <div id="songArtist">Loading Artist...</div>
         </div>
         <button id="playPauseButton">
           <i id="icon" class="fas fa-play"></i>
         </button>
       </div>
     </div>
+
+    <!-- Add these buttons inside the player container (for example, below the infoContainer) -->
+    <div id="searchButtons" style="margin-top:10px; display:flex; justify-content: center; gap:10px;">
+      <button id="spotifyButton" style="background:none;border:none;color:#fff;font-size:32px;cursor:pointer;">
+        <i class="fab fa-spotify"></i>
+      </button>
+      <button id="youtubeButton" style="background:none;border:none;color:#fff;font-size:32px;cursor:pointer;">
+        <i class="fab fa-youtube"></i>
+      </button>
+    </div>
   </div>
+
+  
   
   <!-- Hidden audio element for the live stream -->
   <audio id="audio" crossorigin="anonymous" src="https://stream.derfi.online:8000/main.mp3?_ic2=1739569227911" loop></audio>
   
   <script>
+    // Helper function: if text is too long, wrap it in a marquee.
+    function updateTextWithMarquee(elementId, text, threshold = 30) {
+      const el = document.getElementById(elementId);
+      if (text.length > threshold) {
+        // Wrap the text in a marquee tag.
+        el.innerHTML = `<marquee behavior="scroll" direction="left" scrollamount="3" style="border:0; padding:0; margin:0;">${text}</marquee>`;
+      } else {
+        el.innerText = text;
+      }
+    }
+    
     /* -------------------------------------------------
        Metadata Fetching from AzuraCast Now Playing Endpoint
     ------------------------------------------------- */
@@ -115,20 +141,21 @@
       try {
         const response = await fetch("https://stream.derfi.online/api/station/1/nowplaying");
         const data = await response.json();
-        // Expected JSON structure: data.now_playing.song.title, .artist, .art
+        // Expected JSON structure: data.now_playing.song.title, .artist, and .art
         const song = data.now_playing.song || {};
-        const title = song.title || "Title";
-        const artist = song.artist || "Artist";
-        const art = song.art || "https://via.placeholder.com/300?text=No+Art";
+        const title = song.title || "Unknown Title";
+        const artist = song.artist || "Unknown Artist";
+        const art = song.art || "https://dummyimage.com/300x300/444/fff&text=No+Art";
         
-        document.getElementById("songTitle").innerText = title;
-        document.getElementById("songArtist").innerText = artist;
+        // Update title and artist using our helper function (separate lines)
+        updateTextWithMarquee("songTitle", title);
+        updateTextWithMarquee("songArtist", artist);
         document.getElementById("albumArt").src = art;
       } catch (error) {
         console.error("Error fetching metadata:", error);
       }
     }
-    // Initial fetch and then every 30 seconds.
+    // Initial fetch and then poll every 30 seconds.
     fetchMetadata();
     setInterval(fetchMetadata, 30000);
     
@@ -150,14 +177,25 @@
         iconElement.classList.add("fa-play");
       }
     });
+
+    // Add event listeners for Spotify and YouTube search buttons:
+    document.getElementById("spotifyButton").addEventListener("click", () => {
+      const title = document.getElementById("songTitle").innerText;
+      const query = encodeURIComponent(title);
+      window.open("https://open.spotify.com/search/" + query, "_blank");
+    });
+
+    document.getElementById("youtubeButton").addEventListener("click", () => {
+      const title = document.getElementById("songTitle").innerText;
+      const query = encodeURIComponent(title);
+      window.open("https://www.youtube.com/results?search_query=" + query, "_blank");
+    });
     
     /* -------------------------------------------------
        Frequency-Based Smooth Gradient Transition
        Using Provided Gradient Code
     ------------------------------------------------- */
-    // Set the angle for our gradient.
     const angle = 45;
-    // Define your gradient stops.
     const gradientStopOne = [
       { pct: 0,  color: { r: 255, g: 113, b: 71 } },
       { pct: 100, color: { r: 0, g: 55, b: 255 } }
@@ -173,7 +211,6 @@
     document.getElementById('gradient-button-transition').style.background = 
       `linear-gradient(${angle}deg, rgb(${c1.r}, ${c1.g}, ${c1.b}), rgb(${c2.r}, ${c2.g}, ${c2.b}))`;
     
-    // Function to interpolate between two colors given a percentage.
     const getColor = function(pct, colorSet) {
       let i;
       for (i = 1; i < colorSet.length - 1; i++) {
@@ -195,7 +232,7 @@
       return `rgb(${color.r}, ${color.g}, ${color.b})`;
     };
     
-    // Setup the Web Audio API for frequency analysis.
+    // Setup Web Audio API for frequency analysis.
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     const audioCtx = new AudioContext();
     const source = audioCtx.createMediaElementSource(audio);
@@ -206,15 +243,14 @@
     
     const frequencyData = new Uint8Array(analyser.frequencyBinCount);
     let smoothedValue = 0;
-    // Very low smoothing factor for extremely slow transitions.
+    // Very low smoothing factor for very slow transitions.
     const smoothingFactor = 0.005;
     
-    // Update the gradient once per second.
     function updateGradient() {
       analyser.getByteFrequencyData(frequencyData);
       const maxFreq = Math.max(...frequencyData);
       smoothedValue = smoothedValue * (1 - smoothingFactor) + maxFreq * smoothingFactor;
-      // Normalize smoothed value (0-255) to percentage (0-100)
+      // Normalize smoothed value (0 to 255) to percentage (0 to 100)
       const pct = (smoothedValue / 255) * 100;
       const newC1 = getColor(pct, gradientStopOne);
       const newC2 = getColor(pct, gradientStopTwo);
@@ -224,7 +260,6 @@
     
     setInterval(updateGradient, 1000);
     
-    // Ensure the audio context resumes on playback.
     audio.addEventListener("play", async () => {
       if (audioCtx.state === "suspended") {
         await audioCtx.resume();
