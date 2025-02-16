@@ -56,7 +56,6 @@
     /* Text block with vertical stacking of title (top) and artist (bottom) in white */
     #textInfo {
       margin-top: 10px;
-      margin-bottom: 10px;
       text-align: left;
       color: #fff;
       flex: 1;
@@ -83,6 +82,25 @@
       margin-left: 10px;
       flex-shrink: 0;
     }
+
+    #lookUpTitle {
+      width: 300px;
+      margin: 10px auto 0; /* centers the container */
+      display: flex;
+      justify-content: flex-start; /* aligns content to the left */
+      gap: 10px;
+      color: #fff;
+      font-weight: thin;
+    }
+
+    #searchButtons {
+      width: 300px;
+      margin: 5dvb auto 10px; /* centers the container */
+      display: flex;
+      justify-content: flex-start; /* aligns content to the left */
+      gap: 10px;
+    }
+
     /* Hide native audio controls */
     audio {
       display: none;
@@ -106,13 +124,25 @@
       </div>
     </div>
 
+    <div id="lookUpTitle">
+      <p>Find this song</p>
+    </div>
+    
     <!-- Add these buttons inside the player container (for example, below the infoContainer) -->
-    <div id="searchButtons" style="margin-top:10px; display:flex; justify-content: center; gap:10px;">
+    <div id="searchButtons" style="margin-top:10px; display:flex; justify-content: start; gap:10px;">
+
       <button id="spotifyButton" style="background:none;border:none;color:#fff;font-size:32px;cursor:pointer;">
         <i class="fab fa-spotify"></i>
       </button>
       <button id="youtubeButton" style="background:none;border:none;color:#fff;font-size:32px;cursor:pointer;">
         <i class="fab fa-youtube"></i>
+      </button>
+
+      <button id="deezerButton" style="background:none;border:none;color:#fff;font-size:32px;cursor:pointer;">
+        <i class="fab fa-deezer"></i>
+      </button>
+      <button id="appleMusicButton" style="background:none;border:none;color:#fff;font-size:32px;cursor:pointer;">
+        <i class="fab fa-apple"></i>
       </button>
     </div>
   </div>
@@ -178,18 +208,50 @@
       }
     });
 
-    // Add event listeners for Spotify and YouTube search buttons:
-    document.getElementById("spotifyButton").addEventListener("click", () => {
-      const title = document.getElementById("songTitle").innerText;
-      const query = encodeURIComponent(title);
-      window.open("https://open.spotify.com/search/" + query, "_blank");
-    });
+   // Helper function to get query string using both title and artist
+function getQuery() {
+  const title = document.getElementById("songTitle").innerText;
+  const artist = document.getElementById("songArtist").innerText;
+  return encodeURIComponent(`${title} ${artist}`);
+}
 
-    document.getElementById("youtubeButton").addEventListener("click", () => {
-      const title = document.getElementById("songTitle").innerText;
-      const query = encodeURIComponent(title);
-      window.open("https://www.youtube.com/results?search_query=" + query, "_blank");
+// Spotify search button
+document.getElementById("spotifyButton").addEventListener("click", () => {
+  const query = getQuery();
+  window.open("https://open.spotify.com/search/" + query, "_blank");
+});
+
+// YouTube search button
+document.getElementById("youtubeButton").addEventListener("click", () => {
+  const query = getQuery();
+  window.open("https://www.youtube.com/results?search_query=" + query, "_blank");
+});
+
+// Deezer search button
+document.getElementById("deezerButton").addEventListener("click", () => {
+  const query = getQuery();
+  window.open("https://www.deezer.com/search/" + query, "_blank");
+});
+
+// Apple Music search using the iTunes API
+document.getElementById("appleMusicButton").addEventListener("click", () => {
+  const query = getQuery();
+  const url = `https://itunes.apple.com/search?term=${query}&entity=song&limit=1`;
+  fetch(url)
+    .then(response => response.json())
+    .then(data => {
+      if (data.results && data.results.length > 0) {
+        const trackUrl = data.results[0].trackViewUrl;
+        window.open(trackUrl, "_blank");
+      } else {
+        alert("No track found on iTunes.");
+      }
+    })
+    .catch(error => {
+      console.error("Error searching iTunes API:", error);
+      alert("Error searching iTunes API.");
     });
+});
     
     /* -------------------------------------------------
        Frequency-Based Smooth Gradient Transition
